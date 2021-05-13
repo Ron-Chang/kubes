@@ -35,8 +35,9 @@ class ColorTag:
 
 class Kubes:
     """
-    [-h] [-i] [--command COMMAND] [--download] [--src SRC] [--dest DEST] [-l] [--log]
-    [--context CONTEXT] [--namespace NAMESPACE] [--pod POD]
+    usage: kubes [-h] [-i] [--command COMMAND][-l][--context CONTEXT] [--namespace NAMESPACE] [--pod POD]
+                 [--log] [--follow] [--tail TAIL]
+                 [--download] [--src SRC] [--dest DEST]
     """
 
     try:
@@ -86,7 +87,7 @@ class Kubes:
         # 互動指令
         parser.add_argument(
             '--command',
-            help='Specify Command to replace default value: bash',
+            help='Specify Command [default value: bash]',
             type=str,
         )
         # ---------------- 操作 ---------------- #
@@ -105,7 +106,7 @@ class Kubes:
         # 複製檔案存放路徑
         parser.add_argument(
             '--dest',
-            help='Specify Destination',
+            help='Specify Destination [default value: current location]',
             type=str,
         )
         # ---------------- 操作 ---------------- #
@@ -113,14 +114,24 @@ class Kubes:
         parser.add_argument(
             '-l', '--list',
             action='store_true',
-            help='List the pods of the current context',
+            help='List the pods of the current namespace',
         )
-        # ---------------- 操作 ---------------- #
+        # ---------------- 操作Logs ---------------- #
         # 列出指定 Pod 下 logs
         parser.add_argument(
             '--log',
             action='store_true',
             help='Download File or Folder',
+        )
+        parser.add_argument(
+            '--follow',
+            action='store_true',
+            help='Keep Streaming Container Logs',
+        )
+        parser.add_argument(
+            '--tail',
+            help='Track the Logs back with specific number [default value: 100]',
+            type=int,
         )
         # ---------------- 指定 ---------------- #
         parser.add_argument(
@@ -186,7 +197,15 @@ class Kubes:
         return cls._BG_COLORS[index % len(cls._BG_COLORS)]
 
     @classmethod
-    def _format_line(cls, index, text, is_title=None):
+    def _is_not_running(cls, text):
+        if not text.lower().startswith('running'):
+            return True
+        return False
+
+    @classmethod
+    def _format_line(cls, index, text, status_index, is_title=None):
+        if status_index is not None and index == status_index and cls._is_not_running(text=text):
+            return f'{ColorTag.RED}{text}{ColorTag.RESET}'
         color = cls._get_bg_color(index=index) if is_title else cls._get_fg_color(index=index)
         return f'{color}{text}{ColorTag.RESET}'
 
@@ -195,13 +214,16 @@ class Kubes:
         """ has_header just format the 1st line(loop) """
         if len(form) == 2 and not form[1]:
             cls._stderr(output=form[0])
+        status_index = None
         for index, line in enumerate(form, start=1):
             texts = cls._REGEX_FORM.findall(line)
             if not texts:
                 continue
             result = str()
             for index, text in enumerate(texts):
-                result += cls._format_line(index=index, text=text, is_title=has_header)
+                result += cls._format_line(index=index, text=text, status_index=status_index, is_title=has_header)
+                if has_header and 'STATUS' in text:
+                    status_index = index
             cls._stdout(output=result)
             has_header = False
 
@@ -264,7 +286,12 @@ class Kubes:
         if not args.pod:
             exit(f'Missing Key: --pod')
         pod = cls._get_pod(pod_name=args.pod)
-        cmd = f'kubectl logs {pod}'
+        if args.follow:
+            """ 串流直至退出 """
+            os.system(f'kubectl logs {pod} --follow')
+            exit()
+        tail = args.tail or 100
+        cmd = f'kubectl logs --tail={tail} {pod}'
         stdout = cls._exec(cmd=cmd)
         logs = stdout.split('\n')
         for log in logs:

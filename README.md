@@ -11,6 +11,12 @@
 |#|      date|version|
 |-|----------|-------|
 |1|2021/05/13| v0.0.1|
+|1|2021/05/13| v0.0.6|
+
+## 0.0.6
+- Add streaming arguments and add tail numbers for pods logs
+- Dye the pods status if it shows not Running.
+
 
 ## - How to install
 ```bash
@@ -21,8 +27,9 @@ pip install kubes
 
 ### CLI
 ```bash
-kubes [-h] [-i] [--command COMMAND] [--download] [--src SRC] [--dest DEST] [-l] [--log]
-      [--context CONTEXT] [--namespace NAMESPACE] [--pod POD]
+kubes [-h] [-i] [--command COMMAND][-l][--context CONTEXT] [--namespace NAMESPACE] [--pod POD]
+      [--log] [--follow] [--tail TAIL]
+      [--download] [--src SRC] [--dest DEST]
 ```
 
 If you like my work, please consider buying me a coffee or [PayPal](https://paypal.me/RonDevStudio?locale.x=zh_TW)
