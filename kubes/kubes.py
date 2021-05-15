@@ -68,6 +68,10 @@ class Kubes:
 
     _REGEX_FORM = re.compile(_PATTERN_FORM)
 
+    _VALID_STATUS = [
+        'running',
+        'active',
+    ]
 
     @classmethod
     def _help(cls):
@@ -77,6 +81,24 @@ class Kubes:
     @classmethod
     def _get_args(cls):
         parser = argparse.ArgumentParser()
+        # ---------------- 指定 ---------------- #
+        parser.add_argument(
+            '--pod',
+            help='Specify Pod',
+            type=str,
+            dest='pod',
+        )
+        parser.add_argument(
+            '--context',
+            help='Specify Context',
+            type=str,
+            nargs='?',
+        )
+        parser.add_argument(
+            '--namespace',
+            help='Specify Namespace',
+            type=str,
+        )
         # ---------------- 操作 ---------------- #
         # 互動模式
         parser.add_argument(
@@ -133,22 +155,8 @@ class Kubes:
             help='Track the Logs back with specific number [default value: 100]',
             type=int,
         )
-        # ---------------- 指定 ---------------- #
-        parser.add_argument(
-            '--context',
-            help='Specify Context',
-            type=str,
-        )
-        parser.add_argument(
-            '--namespace',
-            help='Specify Namespace',
-            type=str,
-        )
-        parser.add_argument(
-            '--pod',
-            help='Specify Pod',
-            type=str,
-        )
+
+        parser.print_help()
         return parser.parse_args()
 
     @classmethod
@@ -197,14 +205,15 @@ class Kubes:
         return cls._BG_COLORS[index % len(cls._BG_COLORS)]
 
     @classmethod
-    def _is_not_running(cls, text):
-        if not text.lower().startswith('running'):
-            return True
+    def _is_valid_status(cls, text):
+        for status in cls._VALID_STATUS:
+            if text.lower().startswith(status):
+                return True
         return False
 
     @classmethod
     def _format_line(cls, index, text, status_index, is_title=None):
-        if status_index is not None and index == status_index and cls._is_not_running(text=text):
+        if (status_index is not None) and (index == status_index) and (not cls._is_valid_status(text=text)):
             return f'{ColorTag.RED}{text}{ColorTag.RESET}'
         color = cls._get_bg_color(index=index) if is_title else cls._get_fg_color(index=index)
         return f'{color}{text}{ColorTag.RESET}'
@@ -235,7 +244,17 @@ class Kubes:
         cls._format_form(form=form, has_header=True)
 
     @classmethod
+    def _list_namespaces(cls):
+        cmd = f'kubectl get namespace'
+        stdout = cls._exec(cmd=cmd)
+        form = stdout.split('\n')
+        cls._format_form(form=form, has_header=True)
+
+    @classmethod
     def _switch_context(cls, args):
+        if not args.context:
+            cls._list_namespaces()
+            exit()
         cmd = f'kubectl config set-context --current --namespace={args.context}'
         result = cls._exec(cmd=cmd)
         cls._stdout(output=result)
@@ -304,14 +323,17 @@ class Kubes:
         if len(sys.argv) == 1:
             cls._help()
         args = cls._get_args()
+        if not args.context:
+            cls._switch_context(args=args)
+            exit()
+        if args.context:
+            cls._switch_context(args=args)
+            exit()
         if args.list:
             cls._list_pods()
             exit()
         if args.log:
             cls._log(args=args)
-            exit()
-        if args.context:
-            cls._switch_context(args=args)
             exit()
         if args.download:
             cls._download(args=args)
@@ -320,3 +342,6 @@ class Kubes:
             cls._interact(args=args)
             exit()
 
+
+if __name__ == '__main__':
+    Kubes.cli()
