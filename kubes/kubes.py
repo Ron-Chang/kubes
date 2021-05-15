@@ -34,11 +34,6 @@ class ColorTag:
 
 
 class Kubes:
-    """
-    usage: kubes [-h] [-i] [--command COMMAND][-l][--context CONTEXT] [--namespace NAMESPACE] [--pod POD]
-                 [--log] [--follow] [--tail TAIL]
-                 [--download] [--src SRC] [--dest DEST]
-    """
 
     try:
         _TERMINAL_SIZE_WIDTH = os.get_terminal_size().columns
@@ -79,85 +74,86 @@ class Kubes:
         sys.exit()
 
     @classmethod
-    def _get_args(cls):
+    def _get_parser(cls):
         parser = argparse.ArgumentParser()
-        # ---------------- 指定 ---------------- #
-        parser.add_argument(
-            '--pod',
-            help='Specify Pod',
-            type=str,
-            dest='pod',
+        action = parser.add_subparsers(description='List Subjects', dest='action')
+        # ---------------- 檢視Pods ---------------- #
+        ls = action.add_parser(
+            'ls',
+            help='List Subject [default value: pods]',
         )
-        parser.add_argument(
-            '--context',
-            help='Specify Context',
+        ls.add_argument(
+            'subject',
+            default='pods',
             type=str,
             nargs='?',
         )
-        parser.add_argument(
-            '--namespace',
-            help='Specify Namespace',
+        # ---------------- 檢視Namespace ---------------- #
+        context = action.add_parser(
+            'cx',
+            help='List namespaces or switch the context to one of them',
+        )
+        context.add_argument(
+            'namespace',
+            type=str,
+            nargs='?',
+        )
+        # ---------------- 檢視日誌 ---------------- #
+        log = action.add_parser(
+            'log',
+            help='Show logs',
+        )
+        log.add_argument(
+            'pod',
             type=str,
         )
-        # ---------------- 操作 ---------------- #
-        # 互動模式
-        parser.add_argument(
-            '-i', '--interact',
-            action='store_true',
-            help='Execute Container',
-        )
-        # 互動指令
-        parser.add_argument(
-            '--command',
-            help='Specify Command [default value: bash]',
-            type=str,
-        )
-        # ---------------- 操作 ---------------- #
-        # 下載檔案
-        parser.add_argument(
-            '--download',
-            action='store_true',
-            help='Download File or Folder',
-        )
-        # 複製檔案來源路徑
-        parser.add_argument(
-            '--src',
-            help='Specify Source',
-            type=str,
-        )
-        # 複製檔案存放路徑
-        parser.add_argument(
-            '--dest',
-            help='Specify Destination [default value: current location]',
-            type=str,
-        )
-        # ---------------- 操作 ---------------- #
-        # 列出當前 Namespace 下所有 Pods
-        parser.add_argument(
-            '-l', '--list',
-            action='store_true',
-            help='List the pods of the current namespace',
-        )
-        # ---------------- 操作Logs ---------------- #
-        # 列出指定 Pod 下 logs
-        parser.add_argument(
-            '--log',
-            action='store_true',
-            help='Download File or Folder',
-        )
-        parser.add_argument(
-            '--follow',
-            action='store_true',
-            help='Keep Streaming Container Logs',
-        )
-        parser.add_argument(
-            '--tail',
+        log.add_argument(
+            'tail',
             help='Track the Logs back with specific number [default value: 100]',
             type=int,
+            default=100,
+            nargs='?',
         )
-
-        parser.print_help()
-        return parser.parse_args()
+        log.add_argument(
+            '--follow',
+            action='store_true',
+            help='Streaming pods logs',
+        )
+        # ---------------- 複製檔案 ---------------- #
+        copy = action.add_parser(
+            'cp',
+            help='Download file or directory',
+        )
+        copy.add_argument(
+            'pod',
+            type=str,
+        )
+        copy.add_argument(
+            'src',
+            type=str,
+        )
+        copy.add_argument(
+            'dest',
+            type=str,
+            nargs='?',
+        )
+        # ---------------- 交互模式 ---------------- #
+        run = action.add_parser(
+            'run',
+            help='Download file/folder',
+        )
+        run.add_argument(
+            'pod',
+            type=str,
+        )
+        run.add_argument(
+            'command',
+            help='Command[default: bash]',
+            type=str,
+            default='bash',
+            nargs='?',
+        )
+        return parser
 
     @classmethod
     def _stdout(cls, output, tag=None, end='\n'):
@@ -237,27 +233,23 @@ class Kubes:
             has_header = False
 
     @classmethod
-    def _list_pods(cls):
-        cmd = f'kubectl get pods'
+    def _list(cls, args):
+        cmd = f'kubectl get {args.subject}'
         stdout = cls._exec(cmd=cmd)
         form = stdout.split('\n')
         cls._format_form(form=form, has_header=True)
 
     @classmethod
-    def _list_namespaces(cls):
-        cmd = f'kubectl get namespace'
-        stdout = cls._exec(cmd=cmd)
-        form = stdout.split('\n')
-        cls._format_form(form=form, has_header=True)
-
-    @classmethod
-    def _switch_context(cls, args):
-        if not args.context:
-            cls._list_namespaces()
-            exit()
-        cmd = f'kubectl config set-context --current --namespace={args.context}'
-        result = cls._exec(cmd=cmd)
-        cls._stdout(output=result)
+    def _context(cls, args):
+        if not args.namespace:
+            cmd = f'kubectl get namespace'
+            stdout = cls._exec(cmd=cmd)
+            form = stdout.split('\n')
+            cls._format_form(form=form, has_header=True)
+        else:
+            cmd = f'kubectl config set-context --current --namespace={args.namespace}'
+            result = cls._exec(cmd=cmd)
+            cls._stdout(output=result)
 
     @classmethod
     def _get_pods(cls):
@@ -279,20 +271,20 @@ class Kubes:
         cls._stderr(output=f'Cannot Find <POD {pod_name}>:\n{pod_info}', tag='error')
 
     @classmethod
-    def _download(cls, args):
+    def _copy(cls, args):
         if not args.pod:
             exit(f'Missing Key: --pod')
         pod = cls._get_pod(pod_name=args.pod)
         if not args.src:
             exit(f'Missing Key: --src')
         source = args.src.lstrip('/')
-        destination = args.dest or '.'
+        destination = args.dest or os.path.join('.', os.path.basename(source))
         cmd = f'kubectl cp {pod}:{source} {destination}'
         result = cls._exec(cmd=cmd)
         cls._stdout(output=result)
 
     @classmethod
-    def _interact(cls, args):
+    def _run(cls, args):
         if not args.pod:
             exit(f'Missing Key: --pod')
         command = args.command or 'bash'
@@ -320,27 +312,26 @@ class Kubes:
 
     @classmethod
     def cli(cls):
+        parser = cls._get_parser()
         if len(sys.argv) == 1:
-            cls._help()
-        args = cls._get_args()
-        if not args.context:
-            cls._switch_context(args=args)
-            exit()
-        if args.context:
-            cls._switch_context(args=args)
-            exit()
-        if args.list:
-            cls._list_pods()
-            exit()
-        if args.log:
+            parser.print_help()
+        args = parser.parse_args()
+        if args.action == 'ls':
+            cls._list(args=args)
+            parser.exit()
+        if args.action == 'cx':
+            cls._context(args=args)
+            parser.exit()
+        if args.action == 'cp':
+            cls._copy(args=args)
+            parser.exit()
+        if args.action == 'run':
+            cls._run(args=args)
+            parser.exit()
+        if args.action == 'log':
             cls._log(args=args)
-            exit()
-        if args.download:
-            cls._download(args=args)
-            exit()
-        if args.interact:
-            cls._interact(args=args)
-            exit()
+            parser.exit()
+        parser.print_help()
 
 
 if __name__ == '__main__':

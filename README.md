@@ -1,35 +1,62 @@
 # Kubes
 
-## - What is this?
-- Switch context.
-- List pods.
-- Interact with pod.
-- Copy file from container.
-- Show Logs without porbe info.
+## - Main Purposes
+- `kubes ls` to list pods(default), ns, secrets etc.
+- `kubes cx` to list all namespaces or switch one.
+- `kubes log` to show logs by a number of the tail or streaming with `--follow`.
+- `kubes cp` to copy a file or directory from pod.
+- `kubes run` to interact with a pod.
+
 
 ## - Log
 |#|      date|version|
 |-|----------|-------|
 |1|2021/05/13| v0.0.1|
-|1|2021/05/13| v0.0.6|
+|2|2021/05/13| v0.0.6|
+|3|2021/05/15| v0.1.0|
 
 ## 0.0.6
 - Add streaming arguments and add tail numbers for pods logs
 - Dye the pods status if it shows not Running.
 
+## 0.1.0
+- Restructure arguments by group
 
 ## - How to install
 ```bash
 pip install kubes
 ```
 
-## - How to use
+## - Usage
+```
+kubes [-h] {ls,cx,log,cp,run} ...
 
-### CLI
-```bash
-kubes [-h] [-i] [--command COMMAND][-l][--context CONTEXT] [--namespace NAMESPACE] [--pod POD]
-      [--log] [--follow] [--tail TAIL]
-      [--download] [--src SRC] [--dest DEST]
+optional arguments:
+  -h, --help          show this help message and exit
+
+subcommands:
+  List Subjects
+
+  {ls,cx,log,cp,run}
+    ls                List Subject [default value: pods]
+    cx                List namespaces or switch the context to one of them
+    log               Show logs
+    cp                Download file or directory
+    run               Download file/folder
+usage: kubes.py [-h] {ls,cx,log,cp,run} ...
+
+optional arguments:
+  -h, --help          show this help message and exit
+
+subcommands:
+  List Subjects
+
+  {ls,cx,log,cp,run}
+    ls                List Subject [default value: pods]
+    cx                List namespaces or switch the context to one of them
+    log               Show logs
+    cp                Download file or directory
+    run               Download file/folder
 ```
 
 If you like my work, please consider buying me a coffee or [PayPal](https://paypal.me/RonDevStudio?locale.x=zh_TW)
