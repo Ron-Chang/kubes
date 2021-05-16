@@ -1,33 +1,26 @@
 # Kubes
 
-## - Main Purposes
+## Purposes
 - `kubes ls` to list pods(default), ns, secrets etc.
 - `kubes cx` to list all namespaces or switch one.
 - `kubes log` to show logs by a number of the tail or streaming with `--follow`.
 - `kubes cp` to copy a file or directory from pod.
 - `kubes run` to interact with a pod.
+- The program is using __stdout__ and __stderr__ which means it's able to support the next level deployment scripting.
 
-
-## - Log
-|#|      date|version|
-|-|----------|-------|
-|1|2021/05/13| v0.0.1|
-|2|2021/05/13| v0.0.6|
-|3|2021/05/15| v0.1.0|
-
-## 0.0.6
-- Add streaming arguments and add tail numbers for pods logs
-- Dye the pods status if it shows not Running.
-
-## 0.1.0
-- Restructure arguments by group
-
-## - How to install
+## Installation
 ```bash
 pip install kubes
 ```
 
-## - Usage
+## Instruction
+### - `kubes ls <subjects>`
+This command render the form with color, and track `STATUS` column. If the status is not in [`Running`, `Active`], it will be marked by red.
+![kube_ls_demo_img](https://github.com/Ron-Chang/kubes/blob/develop/img/demo.png)
+
+
+
+## Usage
 ```
 kubes [-h] {ls,cx,log,cp,run} ...
 
@@ -58,6 +51,21 @@ subcommands:
     cp                Download file or directory
     run               Download file/folder
 ```
+
+## Update Logs
+|#|      date|version|
+|-|----------|-------|
+|1|2021/05/13| v0.0.1|
+|2|2021/05/13| v0.0.6|
+|3|2021/05/15| v0.1.0|
+
+## 0.0.6
+- Add streaming arguments and add tail numbers for pods logs
+- Dye the pods status if it shows not Running.
+
+## 0.1.0
+- Restructure arguments by group
+
 
 If you like my work, please consider buying me a coffee or [PayPal](https://paypal.me/RonDevStudio?locale.x=zh_TW)
 Thanks for your support! Cheers! 🎉
