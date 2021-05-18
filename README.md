@@ -59,17 +59,21 @@ subcommands:
 |2|2021/05/13| v0.0.6|
 |3|2021/05/15| v0.1.0|
 |4|2021/05/16| v1.0.0|
+|5|2021/05/17| v1.0.1|
 
-## 0.0.6
-- Add streaming arguments and add tail numbers for pods logs
-- Dye the pods status if it shows not Running.
+## 1.0.1
+- Removed detect command timeout in 10 seconds to avoid copy files overtime
+
+## 1.0.0
+- First release version
+- Update README.md
 
 ## 0.1.0
 - Restructure arguments by group
 
-## 1.0.0
-- First release version.
-- Update README.md.
+## 0.0.6
+- Add streaming arguments and add tail numbers for pods logs
+- Dye the pods status if it shows not Running
 
 If you like my work, please consider buying me a coffee or [PayPal](https://paypal.me/RonDevStudio?locale.x=zh_TW)
 Thanks for your support! Cheers! 🎉

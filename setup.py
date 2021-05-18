@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='kubes',
-    version='1.0.0',
+    version='1.0.1',
     author='Ron Chang',
     author_email='ron.hsien.chang@gmail.com',
     description=(

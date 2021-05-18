@@ -184,7 +184,7 @@ class Kubes:
                 cmd,
                 stderr=subprocess.STDOUT,
                 shell=True,
-                timeout=10,
+                # timeout=10,
                 universal_newlines=True,
             )
         except subprocess.CalledProcessError as e:
