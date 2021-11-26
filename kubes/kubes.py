@@ -59,9 +59,11 @@ class Kubes:
     ]
 
     _PATTERN_FORM = r'[^ \t\n]+ *'
-    _PATTERN_POD_LABEL = '\-[\w\d]+\-[\w\d]+$'
+    _PATTERN_POD_LABEL = '[\-\w\d]?[\-\w\d]?$'
+    _PATTERN_REMOTE_PATH =  r'^([\-\d\w]*):(.*)$'
 
     _REGEX_FORM = re.compile(_PATTERN_FORM)
+    _REGEX_REMOTE_PATH = re.compile(_PATTERN_REMOTE_PATH)
 
     _VALID_STATUS = [
         'running',
@@ -119,14 +121,10 @@ class Kubes:
             action='store_true',
             help='Streaming pods logs',
         )
-        # ---------------- 複製檔案 ---------------- #
+        # ---------------- 推拉檔案 ---------------- #
         copy = action.add_parser(
             'cp',
             help='Download file or directory',
-        )
-        copy.add_argument(
-            'pod',
-            type=str,
         )
         copy.add_argument(
             'src',
@@ -257,29 +255,36 @@ class Kubes:
         stdout = cls._exec(cmd=cmd)
         if not stdout:
             cls._stderr(output=f'No pods in the current namespace')
-        return stdout.split('\n')
+        return stdout.strip().split('\n')
 
     @classmethod
     def _get_pod(cls, pod_name):
         pods = cls._get_pods()
-        regex = re.compile(f'{pod_name}{cls._PATTERN_POD_LABEL}')
-        for pod in pods:
-            if not regex.match(pod):
-                continue
-            return pod
-        pod_info = '\n'.join(f'\t{pod}' for pod in pods)
-        cls._stderr(output=f'Cannot Find <POD {pod_name}>:\n{pod_info}', tag='error')
+        if pod_name in pods:
+            return pod_name
+        pod_info = '\n'.join(f' - {pod}' for pod in pods)
+        cls._stderr(output=f'Cannot Find < POD {pod_name} >:\n{pod_info}', tag='error')
+
+    @classmethod
+    def _is_upload(cls, src):
+        """ if source is remote means download """
+        if cls._REGEX_REMOTE_PATH.findall(src):
+            return False
+        return True
 
     @classmethod
     def _copy(cls, args):
-        if not args.pod:
-            exit(f'Missing Key: --pod')
-        pod = cls._get_pod(pod_name=args.pod)
         if not args.src:
             exit(f'Missing Key: --src')
-        source = args.src.lstrip('/')
-        destination = args.dest or os.path.join('.', os.path.basename(source))
-        cmd = f'kubectl cp {pod}:{source} {destination}'
+        if cls._is_upload(src=args.src) and not args.dest:
+            """ if it is upload dest is mandatory """
+            exit(f'Missing Key: --dest "pod:/path/to/location"')
+        source = args.src.replace(':/', ':')
+        if args.dest:
+            destination = os.path.join(args.dest, os.path.basename(source))
+        else:
+            destination = os.path.join('.', os.path.basename(source))
+        cmd = f'kubectl cp {source} {destination}'
         result = cls._exec(cmd=cmd)
         cls._stdout(output=result)
 
