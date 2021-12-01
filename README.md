@@ -4,7 +4,7 @@
 - `kubes ls` to list pods(default), ns, secrets etc.
 - `kubes cx` to list all namespaces or switch one.
 - `kubes log` to show logs by a number of the tail or streaming with `--follow`.
-- `kubes cp` to copy a file or directory from pod.
+- `kubes cp` to copy a file or directory between pod and local.
 - `kubes run` to interact with a pod.
 - The program is using __stdout__ and __stderr__ which means it's able to support the next level deployment scripting.
 
@@ -22,7 +22,7 @@ This command render the form with color, and track `STATUS` column. If the statu
 
 ## Usage
 ```
-kubes [-h] {ls,cx,log,cp,run} ...
+kubes.py [-h] {ls,cx,log,cp,run} ...
 
 optional arguments:
   -h, --help          show this help message and exit
@@ -35,31 +35,21 @@ subcommands:
     cx                List namespaces or switch the context to one of them
     log               Show logs
     cp                Download file or directory
-    run               Download file/folder
-usage: kubes.py [-h] {ls,cx,log,cp,run} ...
-
-optional arguments:
-  -h, --help          show this help message and exit
-
-subcommands:
-  List Subjects
-
-  {ls,cx,log,cp,run}
-    ls                List Subject [default value: pods]
-    cx                List namespaces or switch the context to one of them
-    log               Show logs
-    cp                Download file or directory
-    run               Download file/folder
+    run               Execute pod with command default: bash
 ```
 
 ## Update Logs
 |#|      date|version|
 |-|----------|-------|
-|1|2021/05/13| v0.0.1|
-|2|2021/05/13| v0.0.6|
-|3|2021/05/15| v0.1.0|
-|4|2021/05/16| v1.0.0|
+|6|2021/05/17| v1.1.0|
 |5|2021/05/17| v1.0.1|
+|4|2021/05/16| v1.0.0|
+|3|2021/05/15| v0.1.0|
+|2|2021/05/13| v0.0.6|
+|1|2021/05/13| v0.0.1|
+
+## 1.1.0
+- Use full pod name to check pods instead of name without hash
 
 ## 1.0.1
 - Removed detect command timeout in 10 seconds to avoid copy files overtime

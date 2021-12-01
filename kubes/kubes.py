@@ -138,7 +138,7 @@ class Kubes:
         # ---------------- 交互模式 ---------------- #
         run = action.add_parser(
             'run',
-            help='Download file/folder',
+            help='Execute pod with command default: bash',
         )
         run.add_argument(
             'pod',
@@ -336,7 +336,6 @@ class Kubes:
         if args.action == 'log':
             cls._log(args=args)
             parser.exit()
-        parser.print_help()
 
 
 if __name__ == '__main__':
