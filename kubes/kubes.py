@@ -90,6 +90,11 @@ class Kubes:
             type=str,
             nargs='?',
         )
+        ls.add_argument(
+            'pod',
+            type=str,
+            nargs='?',
+        )
         # ---------------- 檢視Namespace ---------------- #
         context = action.add_parser(
             'cx',
@@ -121,6 +126,15 @@ class Kubes:
             action='store_true',
             help='Streaming pods logs',
         )
+        # ---------------- 檢視Image ---------------- #
+        image = action.add_parser(
+            'image',
+            help='Get image info',
+        )
+        image.add_argument(
+            'pod',
+            type=str,
+        )
         # ---------------- 推拉檔案 ---------------- #
         copy = action.add_parser(
             'cp',
@@ -149,6 +163,22 @@ class Kubes:
             help='Command[default: bash]',
             type=str,
             default='bash',
+            nargs='?',
+        )
+        # ---------------- 描述服務 ---------------- #
+        describe = action.add_parser(
+            'describe',
+            help='Describe Subject [default value: pods]',
+        )
+        describe.add_argument(
+            'subject',
+            default='pods',
+            type=str,
+            nargs='?',
+        )
+        describe.add_argument(
+            'pod',
+            type=str,
             nargs='?',
         )
         return parser
@@ -232,7 +262,21 @@ class Kubes:
 
     @classmethod
     def _list(cls, args):
-        cmd = f'kubectl get {args.subject}'
+        sub_cmd = str()
+        if args.pod and args.subject not in {'services'}:
+            sub_cmd = f'{args.pod} --output=json'
+            cmd = f'kubectl get {args.subject} {sub_cmd}'
+            stdout = cls._exec(cmd=cmd)
+            cls._stdout(output=stdout)
+            exit()
+        elif args.pod:
+            columns = (
+                'NAME:.metadata.name,'
+                'EXTERNAL-IP:.status.loadBalancer.ingress[].hostname,'
+                'TYPE:spec.type'
+            )
+            sub_cmd = f'{args.pod} --output=custom-columns="{columns}"'
+        cmd = f'kubectl get {args.subject} {sub_cmd}'
         stdout = cls._exec(cmd=cmd)
         form = stdout.split('\n')
         cls._format_form(form=form, has_header=True)
@@ -316,6 +360,25 @@ class Kubes:
             cls._stdout(output=log)
 
     @classmethod
+    def _get_image(cls, args):
+        if not args.pod:
+            exit(f'Missing Key: --pod')
+        pod = cls._get_pod(pod_name=args.pod)
+        template = '{{ range .status.containerStatuses }}{{ .image }}{{end}}'
+        cmd = f'kubectl get pods {pod} -o go-template --template="{template}"'
+        stdout = cls._exec(cmd=cmd)
+        if not stdout:
+            cls._stderr(output=f'No pods in the current namespace')
+        cls._stdout(output=stdout)
+
+    @classmethod
+    def _describe(cls, args):
+        pod = cls._get_pod(pod_name=args.pod)
+        cmd = f'kubectl describe {args.subject} {pod}'
+        stdout = cls._exec(cmd=cmd)
+        cls._stdout(output=stdout)
+
+    @classmethod
     def cli(cls):
         parser = cls._get_parser()
         if len(sys.argv) == 1:
@@ -336,7 +399,14 @@ class Kubes:
         if args.action == 'log':
             cls._log(args=args)
             parser.exit()
+        if args.action == 'image':
+            cls._get_image(args=args)
+            parser.exit()
+        if args.action == 'describe':
+            cls._describe(args=args)
+            parser.exit()
 
 
 if __name__ == '__main__':
     Kubes.cli()
+

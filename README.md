@@ -22,31 +22,41 @@ This command render the form with color, and track `STATUS` column. If the statu
 
 ## Usage
 ```
-kubes.py [-h] {ls,cx,log,cp,run} ...
+kubes.py [-h] {ls,cx,log,image,cp,run,describe} ...
 
 optional arguments:
-  -h, --help          show this help message and exit
+  -h, --help            show this help message and exit
 
 subcommands:
   List Subjects
 
-  {ls,cx,log,cp,run}
-    ls                List Subject [default value: pods]
-    cx                List namespaces or switch the context to one of them
-    log               Show logs
-    cp                Download file or directory
-    run               Execute pod with command default: bash
+  {ls,cx,log,image,cp,run,describe}
+    ls                  List Subject [default value: pods]
+    cx                  List namespaces or switch the context to one of them
+    log                 Show logs
+    image               Get image info
+    cp                  Download file or directory
+    run                 Execute pod with command default: bash
+    describe            Describe Subject [default value: pods]
 ```
 
 ## Update Logs
 |#|      date|version|
 |-|----------|-------|
-|6|2021/05/17| v1.1.0|
+|7|2021/12/24| v1.2.0|
+|6|2021/11/26| v1.1.0|
 |5|2021/05/17| v1.0.1|
 |4|2021/05/16| v1.0.0|
 |3|2021/05/15| v0.1.0|
 |2|2021/05/13| v0.0.6|
 |1|2021/05/13| v0.0.1|
+
+## 1.2.0
+- Add shortcut for get image info
+- Add describe subjects
+- Update `ls` method
+    + format `sevices` for ingress purpose
+    + format Non-sevices as json if pods was specified
 
 ## 1.1.0
 - Use full pod name to check pods instead of name without hash
